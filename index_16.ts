@@ -4,9 +4,11 @@ import { OcppVersion } from "./src/ocppVersion";
 import { registerVcp } from "./src/close";
 import { bootNotificationOcppMessage } from "./src/v16/messages/bootNotification";
 import { statusNotificationOcppMessage } from "./src/v16/messages/statusNotification";
+import { countFromEnv } from "./src/utils";
 import { VCP } from "./src/vcp";
 
 async function main(): Promise<VCP> {
+  const connectors = countFromEnv("CONNECTORS");
   const vcp = new VCP({
     endpoint: process.env.WS_URL ?? "ws://localhost:3000",
     chargePointId: process.env.CP_ID ?? "123456",
@@ -23,13 +25,15 @@ async function main(): Promise<VCP> {
       firmwareVersion: "1.0.0",
     }),
   );
-  vcp.send(
-    statusNotificationOcppMessage.request({
-      connectorId: 1,
-      errorCode: "NoError",
-      status: "Available",
-    }),
-  );
+  for (let connectorId = 1; connectorId <= connectors; connectorId++) {
+    vcp.send(
+      statusNotificationOcppMessage.request({
+        connectorId,
+        errorCode: "NoError",
+        status: "Available",
+      }),
+    );
+  }
   return vcp;
 }
 
